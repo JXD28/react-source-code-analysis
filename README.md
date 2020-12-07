@@ -34,3 +34,56 @@ https://zh.parceljs.org/getting_started.html
     ]
 }
 ```
+# 函数组件->jsx
+
+```js
+function Home() {
+    return (
+        <div
+            className="active"
+            title="123"
+            onClick={() => {
+                console.log("111");
+            }}
+            style={{ color: "red" }}
+            title="345"
+        >
+            hello,<span>react</span>
+        </div>
+    );
+}
+ReactDOM.render(<Home title = 'home'/>, document.getElementById("root"));
+
+//---------------------babel 解析之后--------------------------------------------
+
+function Home() {
+  return /*#__PURE__*/React.createElement("div", {
+    className: "active",
+    title: "123",
+    onClick: () => {
+      console.log("111");
+    },
+    style: {
+      color: "red"
+    },
+    title: "345"
+  }, "hello,", /*#__PURE__*/React.createElement("span", null, "react"));
+}
+
+ReactDOM.render( /*#__PURE__*/React.createElement(Home, {
+  title: "home"
+}), document.getElementById("root"));
+
+```
+
+再看一下我们自定义的createElement的返回值
+```js
+function createElement(tag, attrs, ...children) {
+  return {
+    tag,
+    attrs,
+    children,
+  };
+}
+```
+其中 `Home` 就是传入的tag参数,是一个函数
