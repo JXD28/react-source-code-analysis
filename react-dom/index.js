@@ -12,6 +12,7 @@ function render(vnode, container) {
     return container.appendChild(_render(vnode));
 }
 
+//内部一直递归,直到return真实的dom节点
 function _render(vnode, container) {
     console.log("🚀 ~ file: index.js ~ line 10 ~ render ~ vnode", vnode);
     if (vnode === undefined) {
@@ -20,10 +21,11 @@ function _render(vnode, container) {
     // 如果是一个函数,则渲染组件
     if (typeof vnode.tag === "function") {
         // 1.创建组件
-        const comp = createComponent(vnode.tag, vnode.attrs);
-        console.log("🚀 ~ file: index.js ~ line 24 ~ _render ~ comp", comp);
+        const comp = createComponent(vnode.tag, vnode.attrs); //返回挂载了render属性等的实例对象,如果内部还有函数组件/class继续走render函数,直到渲染到真实的dom
         // 2.设置组件的属性
-        setComponentProp(comp, vnode.attrs);
+        //setComponentProp(comp, vnode.attrs); //对于函数组件和class组件之前都挂载了属性,这一步是????
+        //2.渲染组件
+        renderComponent(comp);
         // 3.返回当前组件的jsx对象
         return comp.base;
     }
@@ -52,12 +54,13 @@ function setAttribute(dom, key, value) {
         key = "class"; //函数的参数时可以修改的,组件的props只能读
     }
 
+    //添加事件
     if (/on\w+/.test(key)) {
         key = key.toLowerCase();
         dom[key] = value || ""; //DOM0级事件处理程序
         console.log("🚀 ~ file: index.js ~ line 40 ~ setAttribute ~ dom", dom);
     } else if (key === "style") {
-        console.log("style", dom.style);
+        //添加样式
         //没有style或者是字符串
         if (!value || typeof value === "string") {
             dom.style.cssText = value || "";
@@ -71,12 +74,13 @@ function setAttribute(dom, key, value) {
             }
         }
     } else {
-        //属性
+        //添加属性
         if (value) {
-            //普通属性,更新
+            //普通属性,如果后边有重复,或者再次渲染属性更新了
             if (key in dom) {
                 dom[key] = value || "";
             } else {
+                //第一次渲染添加
                 dom.setAttribute(key, value);
             }
         } else {
@@ -104,27 +108,25 @@ function createComponent(comp, props) {
         */
         // 是函数组件,则将函数组件扩展成类定义的组件 方便后面的统一处理
         inst = new Component(props); //执行Component中的constructor(),有了state和props的实例属性
-        console.log(
-            "🚀 ~ file: index.js ~ line 111 ~ createComponent ~ inst",
-            inst
-        );
 
         // 改变构造函数指向,原本是指向构造函数Component的
-        inst.constructor = comp;
+        inst.constructor = comp; //这里为什么要改变指向??????
         // 定义render函数
         inst.render = function () {
-            return this.constructor(props); //返回jsx对象
+            console.log("this", this);
+            // return this.constructor(props);
+            return comp(props); //返回jsx对象,通过自定义的createElement
         };
     }
-    return inst;
+    return inst; //返回new之后的实例对象
 }
 
-function setComponentProp(comp, props) {
-    //更新props
-    comp.props = props;
-    //重新渲染组件
-    renderComponent(comp);
-}
+// function setComponentProp(comp, props) {
+//     //更新props
+//     comp.props = props;
+//     //重新渲染组件
+//     renderComponent(comp);
+// }
 
 export function renderComponent(comp) {
     // 声明一个初始化变量,用来保存当前js节点对象
