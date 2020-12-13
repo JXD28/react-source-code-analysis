@@ -1,16 +1,16 @@
-import React from "./react";
-import ReactDOM from "./react-dom";
+import React from './react';
+import ReactDOM from './react-dom';
 
 //执行React.createElement之后 ,ele转换成对象
 const ele = (
     <div
-        className="active"
-        title="123"
+        className='active'
+        title='123'
         onClick={() => {
-            console.log("111");
+            console.log('111');
         }}
-        style={{ color: "red" }}
-        title="345"
+        style={{ color: 'red' }}
+        title='345'
     >
         hello,<span>react</span>
     </div>
@@ -20,41 +20,69 @@ const ele = (
 function Home() {
     return (
         <div
-            className="active"
-            title="123"
+            className='active'
+            title='123'
             onClick={() => {
-                console.log("111");
+                console.log('111');
             }}
-            style={{ color: "red" }}
-            title="345"
+            style={{ color: 'red' }}
+            title='345'
         >
             Home hello,<span>react</span>
         </div>
     );
 }
-class App {
-    constructor(props = {}) {
-        this.state = {};
-        this.props = props;
+class App extends React.Component {
+    constructor(props) {
+        super(props); //别忘了调用super,否则this是undefined
+        this.state = {
+            num: 0,
+        };
     }
+    componentWillMount() {
+        console.log('componentWillMount');
+    }
+
+    componentWillReceiveProps(props) {
+        console.log('componentWillReceiveProps');
+    }
+
+    componentWillUpdate() {
+        console.log('componentWillUpdate');
+    }
+
+    componentDidUpdate() {
+        console.log('componentDidUpdate');
+    }
+
+    componentDidMount() {
+        console.log('componentDidMount');
+    }
+    handleClick() {
+        this.setState({
+            num: ++this.state.num,
+        });
+    }
+
     render() {
         return (
             <div
-                className="active"
-                title="123"
+                className='active'
+                title='123'
                 onClick={() => {
-                    console.log("111");
+                    console.log('111');
                 }}
-                style={{ color: "red" }}
-                title="345"
+                style={{ color: 'red' }}
+                title='345'
                 Home
             >
-                hello,<span>react</span>
+                hello,<span>react{this.state.num}</span>
+                <button onClick={this.handleClick.bind(this)}>点点</button>
             </div>
         );
     }
 }
-ReactDOM.render(<Home title="home" />, document.getElementById("root"));
+ReactDOM.render(<App title='home' />, document.getElementById('root'));
 
 // console.log("🚀 ~ file: index.jsx ~ line 7 ~ ele", ele);
 

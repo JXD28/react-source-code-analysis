@@ -1,8 +1,8 @@
-import Component from "../react/component";
+import Component from '../react/component';
 
 const ReactDOM = {
     render: (vnode, container) => {
-        container.innerHTML = "";
+        container.innerHTML = '';
         return render(vnode, container);
     },
     renderComponent,
@@ -14,23 +14,22 @@ function render(vnode, container) {
 
 //内部一直递归,直到return真实的dom节点
 function _render(vnode, container) {
-    console.log("🚀 ~ file: index.js ~ line 10 ~ render ~ vnode", vnode);
     if (vnode === undefined) {
         return;
     }
     // 如果是一个函数,则渲染组件
-    if (typeof vnode.tag === "function") {
+    if (typeof vnode.tag === 'function') {
         // 1.创建组件
         const comp = createComponent(vnode.tag, vnode.attrs); //返回挂载了render属性等的实例对象,如果内部还有函数组件/class继续走render函数,直到渲染到真实的dom
-        // 2.设置组件的属性
-        //setComponentProp(comp, vnode.attrs); //对于函数组件和class组件之前都挂载了属性,这一步是????
-        //2.渲染组件
-        renderComponent(comp);
-        // 3.返回当前组件的jsx对象
-        return comp.base;
+        // 2.设置组件的属性,渲染组件
+        setComponentProp(comp, vnode.attrs); //对于函数组件和class组件之前都挂载了属性,这一步是????   挂载生命周期
+        // 3.返回当前组件的节点对象
+        return comp.base; //在renderComponent中挂载的
     }
-
-    if (typeof vnode === "string") {
+    if (typeof vnode === 'number') {
+        vnode = String(vnode);
+    }
+    if (typeof vnode === 'string') {
         const textNode = document.createTextNode(vnode);
         return textNode;
     }
@@ -50,24 +49,23 @@ function _render(vnode, container) {
 }
 
 function setAttribute(dom, key, value) {
-    if (key === "className") {
-        key = "class"; //函数的参数时可以修改的,组件的props只能读
+    if (key === 'className') {
+        key = 'class'; //函数的参数时可以修改的,组件的props只能读
     }
 
     //添加事件
     if (/on\w+/.test(key)) {
         key = key.toLowerCase();
-        dom[key] = value || ""; //DOM0级事件处理程序
-        console.log("🚀 ~ file: index.js ~ line 40 ~ setAttribute ~ dom", dom);
-    } else if (key === "style") {
+        dom[key] = value || ''; //DOM0级事件处理程序
+    } else if (key === 'style') {
         //添加样式
         //没有style或者是字符串
-        if (!value || typeof value === "string") {
-            dom.style.cssText = value || "";
-        } else if (value && typeof value === "object") {
+        if (!value || typeof value === 'string') {
+            dom.style.cssText = value || '';
+        } else if (value && typeof value === 'object') {
             for (let k in value) {
-                if (value[key] === "number") {
-                    dom.style[k] = value[k] + "px";
+                if (value[key] === 'number') {
+                    dom.style[k] = value[k] + 'px';
                 } else {
                     dom.style[k] = value[k];
                 }
@@ -78,7 +76,7 @@ function setAttribute(dom, key, value) {
         if (value) {
             //普通属性,如果后边有重复,或者再次渲染属性更新了
             if (key in dom) {
-                dom[key] = value || "";
+                dom[key] = value || '';
             } else {
                 //第一次渲染添加
                 dom.setAttribute(key, value);
@@ -113,7 +111,7 @@ function createComponent(comp, props) {
         inst.constructor = comp; //这里为什么要改变指向??????
         // 定义render函数
         inst.render = function () {
-            console.log("this", this);
+            console.log('this', this);
             // return this.constructor(props);
             return comp(props); //返回jsx对象,通过自定义的createElement
         };
@@ -121,12 +119,19 @@ function createComponent(comp, props) {
     return inst; //返回new之后的实例对象
 }
 
-// function setComponentProp(comp, props) {
-//     //更新props
-//     comp.props = props;
-//     //重新渲染组件
-//     renderComponent(comp);
-// }
+function setComponentProp(comp, props) {
+    if (!comp.base) {
+        if (comp.componentWillMount) {
+            comp.componentWillMount();
+        }
+    } else if (comp.componentReceiveProps) {
+        comp.componentReceiveProps();
+    }
+    //更新props
+    comp.props = props;
+    //重新渲染组件
+    renderComponent(comp);
+}
 
 export function renderComponent(comp) {
     // 声明一个初始化变量,用来保存当前js节点对象
@@ -135,6 +140,17 @@ export function renderComponent(comp) {
     // 返回js节点对象
     base = _render(renderer);
 
+    if (comp.base && comp.componentWillUpdate) {
+        comp.componentWillUpdate();
+    }
+
+    if (comp.base) {
+        if (comp.componentDidUpdate) {
+            comp.componentDidUpdate();
+        }
+    } else if (comp.componentDidMount) {
+        comp.componentDidMount();
+    }
     // 如果调用了setState,节点替换
     if (comp.base && comp.base.parentNode) {
         comp.base.parentNode.replaceChild(base, comp.base);
